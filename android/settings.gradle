@@ -1,0 +1,3 @@
+rootProject.name = 'Sisteme_Logjike'
+
+include ':app'
