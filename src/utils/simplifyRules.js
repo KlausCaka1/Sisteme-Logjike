@@ -2,6 +2,16 @@ import { intersection } from './helpers';
 
 const rules = [
   {
+    label: '!!! => !',
+    apply: expSchema =>
+      expSchema.map(group => ({
+        ...group,
+        vars: group.vars.map(v =>
+          v.length > 2 ? v.substr(v.length % 2 === 0 ? v.length - 2 : v.length - 1) : v
+        )
+      }))
+  },
+  {
     label: 'X+X',
     apply: expSchema => {
       let schema = expSchema;

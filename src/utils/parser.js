@@ -1,6 +1,8 @@
-const formatVars = varStr => varStr.split('').reduce((acc, curr) => {
+const formatVars = varStr =>
+  varStr.split('').reduce((acc, curr) => {
     // handle '!'
-    if (acc[acc.length - 1] === '!') {
+    const prev = acc[acc.length - 1];
+    if (prev && prev[prev.length - 1] === '!') {
       const accCopy = [...acc];
       accCopy[acc.length - 1] += curr;
 
@@ -40,4 +42,3 @@ export const parseExp = exp => {
 
   return termsSplit;
 };
-

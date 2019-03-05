@@ -3,7 +3,7 @@ import { toString } from './helpers';
 import rules from './simplifyRules';
 
 // Define the main function
-export default function simplify(expression = 'BC!BCB+C+!A') {
+export default function simplify(expression = 'BC+C+!!A') {
   // Define action logger
   const output = [];
 
