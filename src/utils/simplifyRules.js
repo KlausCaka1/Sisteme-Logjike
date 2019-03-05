@@ -40,6 +40,7 @@ const rules = [
     label: 'X*X',
     apply: expSchema =>
       expSchema.map(group => ({
+        ...group,
         vars: Object.keys(group.vars.reduce((acc, cur) => ({ ...acc, [cur]: true }), {}))
       }))
   },
