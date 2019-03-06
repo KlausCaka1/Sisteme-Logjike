@@ -1,11 +1,11 @@
 import { parseExp } from './parser';
 import { toString } from './helpers';
-import rules from './simplifyRules';
+import { applyRules } from './rules';
 
 // Define the main function
-export default function simplify(expression = 'BC+A(B+CA)(A+B)') {
+export default function simplify(expression = 'BC+!(A+(BB))') {
   // Define action logger
-  const output = [];
+  const logger = [];
 
   // Calculate parsed expression
   console.log('INITIAL: ', expression);
@@ -14,7 +14,7 @@ export default function simplify(expression = 'BC+A(B+CA)(A+B)') {
 
   // Loop func
   while (true) {
-    const simplified = rules.reduce((exp, rule) => rule.apply(exp), parsed);
+    const simplified = applyRules(parsed);
     console.log('Simplified: ', toString(simplified), simplified);
 
     if (toString(simplified) === toString(parsed)) {
@@ -24,5 +24,5 @@ export default function simplify(expression = 'BC+A(B+CA)(A+B)') {
     parsed = simplified;
   }
 
-  return output;
+  return logger;
 }

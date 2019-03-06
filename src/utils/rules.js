@@ -1,5 +1,23 @@
 import { intersection } from './helpers';
 
+export const applyRules = parsed =>
+  rules.reduce(
+    (exp, rule) =>
+      rule.apply(
+        exp.map(group =>
+          group.inner
+            ? {
+                vars: [],
+                inner: applyRules(group.inner),
+                suffix: applyRules(group.suffix),
+                prefix: applyRules(group.prefix)
+              }
+            : group
+        )
+      ),
+    parsed
+  );
+
 const rules = [
   {
     label: '!!! => !',
@@ -12,7 +30,7 @@ const rules = [
       }))
   },
   {
-    label: 'X+X',
+    label: 'X + X',
     apply: expSchema => {
       let schema = expSchema;
       let i = 0;
@@ -37,7 +55,7 @@ const rules = [
     }
   },
   {
-    label: 'X*X',
+    label: 'X * X',
     apply: expSchema =>
       expSchema.map(group => ({
         ...group,
@@ -45,7 +63,7 @@ const rules = [
       }))
   },
   {
-    label: 'X*!X',
+    label: 'X * !X',
     apply: expSchema =>
       expSchema.filter(group => {
         const vars = [...group.vars];
@@ -66,5 +84,3 @@ const rules = [
       })
   }
 ];
-
-export default rules;
