@@ -63,9 +63,8 @@ export const parseExp = exp => {
         }
 
         if (nextMatch[0] === '(') {
-          tmpCursorPos += closingParanthesisIndex(
-            exp.substring(tmpCursorPos + nextMatch.index + 1)
-          );
+          tmpCursorPos +=
+            closingParanthesisIndex(exp.substring(tmpCursorPos + nextMatch.index + 1)) + 1;
         }
 
         if (nextMatch[0] === '+') {
@@ -75,6 +74,7 @@ export const parseExp = exp => {
       }
 
       const matchStr = exp.substring(cursorPos, tmpCursorPos);
+
       termsSplit.push(formatVars(matchStr));
       cursorPos += matchStr.length + 1;
     }

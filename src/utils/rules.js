@@ -18,6 +18,8 @@ export const applyRules = parsed =>
     parsed
   );
 
+// TODO: X + !X
+
 const rules = [
   {
     label: '!!! => !',
@@ -53,6 +55,44 @@ const rules = [
 
       return schema;
     }
+  },
+  {
+    label: 'X(A + B)Z => XZ(A + B)',
+    apply: expSchema =>
+      expSchema.map(group => {
+        if (group.inner && group.suffix.length > 0) {
+          const isSuffixComplex = group.suffix[0].inner;
+          const prefixVars = group.prefix[0] ? group.prefix[0].vars : [];
+
+          if (!isSuffixComplex) {
+            return {
+              ...group,
+              prefix: [{ vars: prefixVars.concat(group.suffix[0].vars) }],
+              suffix: []
+            };
+          }
+
+          const subGroup = group.suffix[0];
+          const subGroupPrefixVars = subGroup.prefix[0] ? subGroup.prefix[0].vars : [];
+
+          return {
+            ...group,
+            prefix: [{ vars: prefixVars.concat(subGroupPrefixVars) }],
+            suffix: [
+              {
+                ...subGroup,
+                prefix: []
+              }
+            ]
+          };
+        }
+
+        return group;
+      })
+  },
+  {
+    label: 'X*(Y + Z) = X*Y + X*Z',
+    apply: expSchema => expSchema
   },
   {
     label: 'X * X',

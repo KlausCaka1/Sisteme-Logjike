@@ -4,9 +4,11 @@ export function intersection(arr1, arr2) {
 
 export const toString = parsedExp =>
   parsedExp
-    .map(group => group.inner
+    .map(group =>
+      group.inner
         ? `${toString(group.prefix)}(${toString(group.inner)})${toString(group.suffix)}`
-        : group.vars.join(''))
+        : group.vars.join('')
+    )
     .join('+');
 
 export const closingParanthesisIndex = str => {
