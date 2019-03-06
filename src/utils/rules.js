@@ -92,7 +92,55 @@ const rules = [
   },
   {
     label: 'X*(Y + Z) = X*Y + X*Z',
-    apply: expSchema => expSchema
+    apply: expSchema => {
+      let tmpExpSchema = [...expSchema];
+      let curIndex = 0;
+
+      while (curIndex < tmpExpSchema.length) {
+        const group = tmpExpSchema[curIndex];
+
+        if (
+          group.inner &&
+          group.suffix.length === 0 &&
+          group.prefix.length !== 0 &&
+          group.prefix[0] !== '!'
+        ) {
+          const newGroups = group.inner.map(tmpGroup => {
+            if (tmpGroup.inner) {
+              return {
+                ...tmpGroup,
+                prefix: tmpGroup.prefix[0]
+                  ? [
+                      {
+                        ...tmpGroup.prefix[0],
+                        vars: tmpGroup.prefix[0].vars.concat(group.prefix[0].vars)
+                      }
+                    ]
+                  : group.prefix
+              };
+            }
+
+            return { ...tmpGroup, vars: tmpGroup.vars.concat(group.prefix[0].vars) };
+          });
+
+          tmpExpSchema = []
+            .concat(tmpExpSchema.slice(0, curIndex))
+            .concat(newGroups)
+            .concat(tmpExpSchema.slice(curIndex + 1));
+        } else if (group.inner && group.suffix.length === 0 && group.prefix.length === 0) {
+          // SPECIAL CASE  '(AB+C) => AB+C'
+
+          tmpExpSchema = []
+            .concat(tmpExpSchema.slice(0, curIndex))
+            .concat(group.inner)
+            .concat(tmpExpSchema.slice(curIndex + 1));
+        } else {
+          curIndex++;
+        }
+      }
+
+      return tmpExpSchema;
+    }
   },
   {
     label: 'X * X',
