@@ -18,8 +18,6 @@ export const applyRules = parsed =>
     parsed
   );
 
-// TODO: X + !X
-
 const rules = [
   {
     label: '!!! => !',
@@ -54,6 +52,34 @@ const rules = [
       }
 
       return schema;
+    }
+  },
+  {
+    label: 'A + !A',
+    apply: expSchema => {
+      let tmpExpSchema = [...expSchema];
+      let curIndex = 0;
+
+      while (curIndex < tmpExpSchema.length) {
+        const group = tmpExpSchema[curIndex];
+        if (group.vars.length === 1) {
+          const otherValue =
+            group.vars[0].length > 1 ? group.vars[0].substring(1) : `!${group.vars[0]}`;
+          const otherIndex = tmpExpSchema
+            .slice(curIndex + 1)
+            .findIndex(
+              otherGroup => otherGroup.vars.length === 1 && otherGroup.vars[0] === otherValue
+            );
+
+          if (otherIndex !== -1) {
+            tmpExpSchema = [{ vars: ['1'] }];
+          }
+        }
+
+        curIndex++;
+      }
+
+      return tmpExpSchema;
     }
   },
   {
@@ -103,24 +129,24 @@ const rules = [
           group.inner &&
           group.suffix.length === 0 &&
           group.prefix.length !== 0 &&
-          group.prefix[0] !== '!'
+          group.prefix[0].vars[group.prefix[0].vars.length - 1] !== '!'
         ) {
-          const newGroups = group.inner.map(tmpGroup => {
-            if (tmpGroup.inner) {
+          const newGroups = group.inner.map(innerGroup => {
+            if (innerGroup.inner) {
               return {
-                ...tmpGroup,
-                prefix: tmpGroup.prefix[0]
+                ...innerGroup,
+                prefix: innerGroup.prefix[0]
                   ? [
                       {
-                        ...tmpGroup.prefix[0],
-                        vars: tmpGroup.prefix[0].vars.concat(group.prefix[0].vars)
+                        ...innerGroup.prefix[0],
+                        vars: group.prefix[0].vars.concat(innerGroup.prefix[0].vars)
                       }
                     ]
                   : group.prefix
               };
             }
 
-            return { ...tmpGroup, vars: tmpGroup.vars.concat(group.prefix[0].vars) };
+            return { ...innerGroup, vars: innerGroup.vars.concat(group.prefix[0].vars) };
           });
 
           tmpExpSchema = []
@@ -128,12 +154,28 @@ const rules = [
             .concat(newGroups)
             .concat(tmpExpSchema.slice(curIndex + 1));
         } else if (group.inner && group.suffix.length === 0 && group.prefix.length === 0) {
-          // SPECIAL CASE  '(AB+C) => AB+C'
+          //--------------------------------|
+          // SPECIAL CASE  '(AB+C) => AB+C' |
+          //--------------------------------|
 
           tmpExpSchema = []
             .concat(tmpExpSchema.slice(0, curIndex))
             .concat(group.inner)
             .concat(tmpExpSchema.slice(curIndex + 1));
+        } else if (
+          group.inner &&
+          group.inner.length === 1 &&
+          group.inner[0].vars.length === 1 &&
+          group.prefix[0] &&
+          group.prefix[0].vars.length === 1 &&
+          group.prefix[0].vars[0] === '!'
+        ) {
+          //---------------------------|
+          // SPECIAL CASE '!(A) => !A' |
+          //---------------------------|
+
+          tmpExpSchema[curIndex] = { vars: [`!${group.inner[0].vars[0]}`] };
+          curIndex++;
         } else {
           curIndex++;
         }
@@ -158,7 +200,7 @@ const rules = [
         let i = 0;
 
         while (i < vars.length) {
-          const otherVar = vars[i].length > 1 ? vars[i].substr(1) : `!${vars[i]}`;
+          const otherVar = vars[i].length > 1 ? vars[i].substring(1) : `!${vars[i]}`;
           const otherIndex = vars.slice(i + 1).findIndex(el => el === otherVar);
 
           if (otherIndex !== -1) {

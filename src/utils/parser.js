@@ -30,6 +30,8 @@ const formatVars = varStr => {
 };
 
 export const parseExp = exp => {
+  console.log(exp);
+
   const termsSplit = [];
   let cursorPos = 0;
 
@@ -76,7 +78,7 @@ export const parseExp = exp => {
       const matchStr = exp.substring(cursorPos, tmpCursorPos);
 
       termsSplit.push(formatVars(matchStr));
-      cursorPos += matchStr.length + 1;
+      cursorPos += matchStr.length;
     }
   }
 

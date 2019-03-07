@@ -22,7 +22,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 0.5,
-    borderColor: '#91AA9D'
+    borderColor: '#435e6c'
   },
   inputButtonText: {
     fontSize: 22,
