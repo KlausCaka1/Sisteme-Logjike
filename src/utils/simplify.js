@@ -7,13 +7,15 @@ export default function simplify(expression = 'B+(!X+A(Y+C))') {
   // Calculate parsed expression
   console.log('INITIAL: ', expression);
   const parsed = parseExp(expression);
-  console.log('Parsed: ', toString(parsed), parsed);
+  console.log('PARSED: ', toString(parsed), parsed);
+
+  const output = [];
 
   // Loop func
   let prevSimplified = parsed;
 
   while (true) {
-    const simplified = applyRules(prevSimplified);
+    const simplified = applyRules(prevSimplified, output);
     console.log('Simplified: ', toString(simplified), simplified);
 
     if (toString(simplified) === toString(prevSimplified)) {
@@ -22,6 +24,8 @@ export default function simplify(expression = 'B+(!X+A(Y+C))') {
 
     prevSimplified = simplified;
   }
+
+  console.log('OUTPUT: ', output);
 
   return toString(prevSimplified);
 }

@@ -33,7 +33,7 @@ export default class Calculator extends Component {
     LayoutAnimation.easeInEaseOut();
     this.setState({
       inputValue: nextInputValue,
-      resultPreview: nextResult,
+      resultPreview: nextInputValue ? nextResult || '0' : '',
       hasError: nextResult === ''
     });
   };

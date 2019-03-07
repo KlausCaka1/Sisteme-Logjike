@@ -1,9 +1,9 @@
-import { intersection } from './helpers';
+import { intersection, toString } from './helpers';
 
-export const applyRules = parsed =>
+export const applyRules = (parsed, output = []) =>
   rules.reduce(
-    (exp, rule) =>
-      rule.apply(
+    (exp, rule) => {
+      const after = rule.apply(
         exp.map(group =>
           group.inner
             ? {
@@ -14,7 +14,15 @@ export const applyRules = parsed =>
               }
             : group
         )
-      ),
+      );
+
+      if (!output.length || output[output.length - 1].result !== toString(after)) {
+        output.push({ label: rule.label, result: toString(after) });
+      }
+
+      return after;
+    },
+
     parsed
   );
 
@@ -24,9 +32,21 @@ const rules = [
     apply: expSchema =>
       expSchema.map(group => ({
         ...group,
-        vars: group.vars.map(v =>
-          v.length > 2 ? v.substr(v.length % 2 === 0 ? v.length - 2 : v.length - 1) : v
-        )
+        vars: group.vars.reduce((acc, v) => {
+          if (v.charAt(0) === '!' && v.charAt(v.length - 1) === '!' && v.length > 1) {
+            if (v.length % 2 === 0) {
+              return acc;
+            }
+
+            return [...acc, '!'];
+          }
+
+          if (v.length > 2) {
+            return [...acc, v.substr(v.length % 2 === 0 ? v.length - 2 : v.length - 1)];
+          }
+
+          return [...acc, v];
+        }, [])
       }))
   },
   {
@@ -40,6 +60,7 @@ const rules = [
           .slice(i + 1)
           .findIndex(
             group =>
+              schema[i].vars.length > 0 &&
               schema[i].vars.length === group.vars.length &&
               intersection(schema[i].vars, group.vars).length === group.vars.length
           );
@@ -93,7 +114,7 @@ const rules = [
           if (!isSuffixComplex) {
             return {
               ...group,
-              prefix: [{ vars: prefixVars.concat(group.suffix[0].vars) }],
+              prefix: [{ vars: [group.suffix[0].vars].concat(prefixVars) }],
               suffix: []
             };
           }
@@ -103,7 +124,7 @@ const rules = [
 
           return {
             ...group,
-            prefix: [{ vars: prefixVars.concat(subGroupPrefixVars) }],
+            prefix: [{ vars: subGroupPrefixVars.concat(prefixVars) }],
             suffix: [
               {
                 ...subGroup,
@@ -212,5 +233,91 @@ const rules = [
 
         return true;
       })
+  },
+  {
+    label: 'X+XY => X',
+    apply: expSchema => {
+      let tmpExpSchema = [...expSchema];
+      let curIndex = 0;
+
+      while (curIndex < tmpExpSchema.length) {
+        const group = tmpExpSchema[curIndex];
+
+        const otherIndex = tmpExpSchema.findIndex(
+          (otherGroup, i) =>
+            i !== curIndex &&
+            group.vars.length > 0 &&
+            otherGroup.vars.length > group.vars.length &&
+            intersection(otherGroup.vars, group.vars).length === group.vars.length
+        );
+
+        if (otherIndex !== -1) {
+          tmpExpSchema = tmpExpSchema.filter((el, i) => i !== otherIndex);
+        } else {
+          curIndex++;
+        }
+      }
+
+      return tmpExpSchema;
+    }
+  },
+  {
+    label: 'X+!XY => X + Y || XY+Z!(XY) => XY+Z',
+    apply: expSchema => {
+      const tmpExpSchema = [...expSchema];
+      let curIndex = 0;
+
+      while (curIndex < tmpExpSchema.length) {
+        const group = tmpExpSchema[curIndex];
+
+        if (group.vars.length === 1) {
+          const reversed =
+            group.vars[0].length > 1 ? group.vars[0].substring(1) : `!${group.vars[0]}`;
+
+          const otherIndex = tmpExpSchema.findIndex(
+            (otherGroup, i) =>
+              i !== curIndex &&
+              otherGroup.vars.length > group.vars.length &&
+              intersection(otherGroup.vars, [reversed]).length === group.vars.length
+          );
+
+          if (otherIndex !== -1) {
+            tmpExpSchema[otherIndex].vars = tmpExpSchema[otherIndex].vars.filter(
+              el => el !== reversed
+            );
+          } else {
+            curIndex++;
+          }
+        } else if (group.vars.length > 1) {
+          const otherIndex = tmpExpSchema.findIndex(
+            (otherGroup, i) =>
+              i !== curIndex &&
+              otherGroup.inner &&
+              otherGroup.inner.length === 1 &&
+              otherGroup.inner[0].vars.length === group.vars.length &&
+              otherGroup.suffix.length === 0 &&
+              otherGroup.prefix.length > 0 &&
+              otherGroup.prefix[0].vars.length > 1 &&
+              otherGroup.prefix[0].vars[otherGroup.prefix[0].vars.length - 1] === '!' &&
+              intersection(otherGroup.inner[0].vars, group.vars).length === group.vars.length
+          );
+
+          if (otherIndex !== -1) {
+            tmpExpSchema[otherIndex] = {
+              vars: tmpExpSchema[otherIndex].prefix[0].vars.slice(
+                0,
+                tmpExpSchema[otherIndex].prefix[0].vars.length - 1
+              )
+            };
+          } else {
+            curIndex++;
+          }
+        } else {
+          curIndex++;
+        }
+      }
+
+      return tmpExpSchema;
+    }
   }
 ];
